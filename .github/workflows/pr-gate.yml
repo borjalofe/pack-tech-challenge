@@ -173,7 +173,8 @@ jobs:
           E2E_PORT: 4173
         run: pnpm run build
 
-      - name: Upload Resource e2e
+      # Covers upload modal, table/toast, and upload→list→download happy path (#20–#22).
+      - name: Playwright e2e (upload → list → open)
         env:
           E2E_PORT: 4173
           E2E_BASE_URL: http://localhost:4173

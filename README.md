@@ -31,6 +31,7 @@ Set `ORIGIN` in `.env` before `pnpm build` / Compose image build so it matches t
 - Upload UI: Resources → **Upload** (modal uses shared Zod, then `POST /api/resources`)
 - Upload API: `POST /api/resources` (multipart)
 - List: `GET /api/resources` (public fields for the table; no `storagePath`)
+- Download/open: `GET /api/resources/:id/file` (id lookup only; attachment + stored Content-Type)
 
 Example upload:
 
@@ -76,7 +77,7 @@ Other commands that work today:
 pnpm run check   # svelte-check / TypeScript
 pnpm lint        # prettier + eslint
 pnpm test        # vitest unit (+ DB integration when DATABASE_URL is set)
-pnpm test:e2e    # Playwright upload modal (build with matching ORIGIN first)
+pnpm test:e2e    # Playwright: upload modal, table/toast, row download (build with matching ORIGIN first)
 pnpm run audit   # SCA, fail on high+
 pnpm run build   # production build (Node adapter; reads ORIGIN for CSRF)
 pnpm start       # node build
@@ -87,7 +88,7 @@ Local reset: `docker compose down -v` then bring the stack up again.
 
 ## Brand / chrome + upload form + table
 
-Pack visual tokens, Resources page chrome (header, card, tabs, Field, Upload, FAB), the **Upload Resource** modal (Images 1–2), and the **table body + success toast** (Image 3).
+Pack visual tokens, Resources page chrome (header, card, tabs, Field, Upload, FAB), the **Upload Resource** modal (Images 1–2), the **table body + success toast** (Image 3), and **row download/open**.
 
 - Tokens: [`src/lib/styles/tokens.css`](src/lib/styles/tokens.css) / [`src/lib/styles/tokens.ts`](src/lib/styles/tokens.ts)
 - Notes + screenshots: [`docs/brand/`](docs/brand/)
@@ -96,16 +97,22 @@ Pack visual tokens, Resources page chrome (header, card, tabs, Field, Upload, FA
 - Dropdown catalog (client-safe): `src/lib/catalog.ts`
 - Table binds to `GET /api/resources` (SSR load + refresh after upload)
 - Toast copy after successful upload: `Resource Uploaded Successfully!` (success token `#1C9C70`)
+- Title / ⋮ open `GET /api/resources/:id/file` (no client path; missing → 404)
 
 ## PR gate
 
-PRs to `main` run `.github/workflows/pr-gate.yml` (gate v0): typecheck + lint, unit tests, db migrate/seed + upload integration, Playwright upload-modal + table/toast e2e, and `pnpm run audit` at high severity.
+PRs to `main` run `.github/workflows/pr-gate.yml` (gate v0): typecheck + lint, unit tests, db migrate/seed + upload integration, Playwright e2e (upload → list → open), and `pnpm run audit` at high severity.
 
 ```sh
-# Local e2e (db up, same ORIGIN baked into the build as Playwright baseURL)
+# Local e2e (Compose db up; ORIGIN must match Playwright baseURL at build time)
+cp .env.example .env   # if needed
+docker compose up -d db
+pnpm db:migrate && pnpm db:seed
 ORIGIN=http://localhost:4173 pnpm run build
-E2E_BASE_URL=http://localhost:4173 pnpm test:e2e
+E2E_PORT=4173 E2E_BASE_URL=http://localhost:4173 pnpm test:e2e
 ```
+
+Specs live under `e2e/` (`upload-resource`, `resources-table`, `row-download`).
 
 ## Daily vulnerability scan
 

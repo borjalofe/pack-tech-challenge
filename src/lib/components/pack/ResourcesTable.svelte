@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import type { PublicResourceDto } from '#lib/api/resources.js';
 	import { RESOURCE_CATEGORY_LABELS, RESOURCE_PROVIDER_LABELS } from '#lib/catalog.js';
 
@@ -63,7 +64,15 @@
 			{:else}
 				{#each sorted as row (row.id)}
 					<tr data-slot="resources-table-row">
-						<td>{row.title}</td>
+						<td>
+							<a
+								class="title-link"
+								data-slot="resources-table-open"
+								href={resolve('/api/resources/[id]/file', { id: row.id })}
+							>
+								{row.title}
+							</a>
+						</td>
 						<td class="muted">{row.fileOriginalName}</td>
 						<td>{row.viewCount}</td>
 						<td class="muted">{row.uploadedBy ?? '—'}</td>
@@ -78,15 +87,15 @@
 							>
 						</td>
 						<td class="actions">
-							<button
-								type="button"
+							<a
 								class="more"
 								data-slot="resources-table-row-actions"
-								aria-label={`Actions for ${row.title}`}
-								disabled
+								href={resolve('/api/resources/[id]/file', { id: row.id })}
+								aria-label={`Download ${row.title}`}
+								title="Download"
 							>
 								⋮
-							</button>
+							</a>
 						</td>
 					</tr>
 				{/each}
@@ -166,6 +175,17 @@
 		width: 2.5rem;
 	}
 
+	.title-link {
+		color: inherit;
+		text-decoration: none;
+		font-weight: 500;
+	}
+
+	.title-link:hover {
+		color: var(--color-primary);
+		text-decoration: underline;
+	}
+
 	.more {
 		appearance: none;
 		border: 0;
@@ -173,8 +193,13 @@
 		color: var(--color-muted);
 		font-size: 1.25rem;
 		line-height: 1;
-		cursor: not-allowed;
+		cursor: pointer;
 		padding: 0.25rem 0.5rem;
+		text-decoration: none;
+	}
+
+	.more:hover {
+		color: var(--color-foreground);
 	}
 
 	.sr-only {
