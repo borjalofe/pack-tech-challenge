@@ -1,0 +1,120 @@
+# Gate v0 — owns “what mergeable means” for PRs to main.
+# Later issues may add jobs; do not replace this contract without updating this workflow.
+name: PR gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: pr-gate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PNPM_VERSION: 11.18.0
+  NODE_VERSION: '22'
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm check
+
+      - name: Lint
+        run: pnpm lint
+
+  unit:
+    name: unit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Unit tests
+        run: pnpm test
+
+  audit:
+    name: audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Fail threshold: high (and critical). Moderate/low are reported but do not fail the job.
+      - name: Dependency audit
+        run: |
+          {
+            echo "## pnpm audit"
+            echo ""
+            echo "Fail threshold: **high** (\`pnpm audit --audit-level=high\`)."
+            echo "Moderate and low advisories are listed when present but do not fail the gate."
+            echo ""
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          set +e
+          pnpm run audit 2>&1 | tee /tmp/pnpm-audit.txt
+          status=${PIPESTATUS[0]}
+          set -e
+
+          cat /tmp/pnpm-audit.txt >> "$GITHUB_STEP_SUMMARY"
+
+          {
+            echo '```'
+            echo ""
+            if [ "$status" -eq 0 ]; then
+              echo "✅ No high/critical advisories at the documented threshold."
+            else
+              echo "❌ Audit failed at high/critical threshold (exit \`$status\`)."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$status"
