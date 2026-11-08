@@ -189,3 +189,14 @@ gh workflow run "Daily audit" --ref main
 ```
 
 Container image scanning is **N/A** until a dedicated image-scanning job is added (Compose already builds an `app` image for runtime).
+
+## Next steps (NTH intent — not shipped)
+
+These are deferred nice-to-haves tracked as review/intent only ([epic #12](https://github.com/borjalofe/pack-tech-challenge/issues/12)). **None of the following are implemented in this repo.**
+
+| Intent | Why it was deferred | Issue |
+| --- | --- | --- |
+| Wire search + tab filters | Field/tabs are presentational in M1; filter query params are not on the list API | [#24](https://github.com/borjalofe/pack-tech-challenge/issues/24) |
+| Cloud object storage | Local `FILE_STORAGE_ROOT` keeps the ≤3h path small; cloud would swap the store adapter | [#25](https://github.com/borjalofe/pack-tech-challenge/issues/25) |
+| Deploy target | Compose + `adapter-node` is enough to demo; production host/CDN choice is open | [#26](https://github.com/borjalofe/pack-tech-challenge/issues/26) |
+| In-app file viewer | M1 opens/downloads via attachment; rich in-browser preview is separate | [#27](https://github.com/borjalofe/pack-tech-challenge/issues/27) |
