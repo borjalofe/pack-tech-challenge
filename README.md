@@ -12,6 +12,7 @@ SvelteKit + TypeScript app for the Pack resources take-home. Package manager: **
 | Database | Postgres 16 via Compose service `db` + Drizzle migrations |
 | Upload validation | Shared Zod (`src/lib/validation/resource-upload.ts`) |
 | File blobs | Local filesystem (`FILE_STORAGE_ROOT`) |
+| UI tokens | Pack CSS vars (`src/lib/styles/tokens.css`) — primary `#FC8034` |
 
 ## How to run (Compose app + db)
 
@@ -79,6 +80,14 @@ pnpm run preview # vite preview
 
 Local reset: `docker compose down -v` then bring the stack up again.
 
+## Brand / chrome
+
+Pack visual tokens and Resources **page chrome only** (header, card, tabs, Field, disabled Upload, FAB). No upload modal and no table body yet.
+
+- Tokens: [`src/lib/styles/tokens.css`](src/lib/styles/tokens.css) / [`src/lib/styles/tokens.ts`](src/lib/styles/tokens.ts)
+- Notes + screenshots: [`docs/brand/`](docs/brand/)
+- Shell: `src/lib/components/pack/`
+
 ## PR gate
 
 PRs to `main` run `.github/workflows/pr-gate.yml` (gate v0): typecheck + lint, unit tests, db migrate/seed + upload integration, and `pnpm run audit` at high severity.
@@ -101,3 +110,4 @@ Container image scanning is **N/A** until a dedicated image-scanning job is adde
 - [0002 — Compose Postgres + env contract](docs/decisions/0002-compose-postgres-env-contract.md)
 - [0003 — Drizzle for resources migration + catalog seed](docs/decisions/0003-drizzle-resources-migration.md)
 - [0004 — Shared Zod upload schema + local filesystem store](docs/decisions/0004-shared-zod-local-fs-upload.md)
+- [0005 — Pack visual tokens + chrome shell](docs/decisions/0005-pack-visual-tokens.md)
