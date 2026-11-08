@@ -1,10 +1,31 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
+	import type { PublicResourceDto } from '#lib/api/resources.js';
 	import AppHeader from './AppHeader.svelte';
+	import ResourcesTable from './ResourcesTable.svelte';
 	import ResourcesToolbar from './ResourcesToolbar.svelte';
+	import SuccessToast from './SuccessToast.svelte';
 	import SupportChatFab from './SupportChatFab.svelte';
 	import UploadResourceDialog from './UploadResourceDialog.svelte';
 
+	type Props = {
+		initialItems?: PublicResourceDto[];
+	};
+
+	let { initialItems = [] }: Props = $props();
+
 	let uploadOpen = $state(false);
+	let toastOpen = $state(false);
+	let toastTimer: ReturnType<typeof setTimeout> | undefined;
+
+	async function onUploaded() {
+		await invalidateAll();
+		toastOpen = true;
+		clearTimeout(toastTimer);
+		toastTimer = setTimeout(() => {
+			toastOpen = false;
+		}, 3500);
+	}
 </script>
 
 <div class="shell" data-slot="dashboard-shell">
@@ -15,18 +36,16 @@
 			<header class="card-head">
 				<h1>Resources</h1>
 			</header>
-			<ResourcesToolbar onUploadClick={() => (uploadOpen = true)} />
-			<div class="body" data-slot="resources-body-placeholder">
-				<p>
-					Table body lands in a later issue. Chrome (header, card, tabs, Field, Upload, FAB) is
-					owned here.
-				</p>
+			<div class="card-body">
+				<SuccessToast open={toastOpen} />
+				<ResourcesToolbar onUploadClick={() => (uploadOpen = true)} />
+				<ResourcesTable items={initialItems} />
 			</div>
 		</section>
 	</main>
 
 	<SupportChatFab />
-	<UploadResourceDialog bind:open={uploadOpen} />
+	<UploadResourceDialog bind:open={uploadOpen} {onUploaded} />
 </div>
 
 <style>
@@ -42,6 +61,7 @@
 	}
 
 	.card {
+		position: relative;
 		width: 100%;
 		max-width: var(--width-content);
 		background: var(--color-surface);
@@ -62,13 +82,7 @@
 		letter-spacing: -0.02em;
 	}
 
-	.body {
-		margin-top: var(--space-6);
-		padding: var(--space-8) var(--space-4);
-		border: 1px dashed var(--color-border);
-		border-radius: var(--radius-sm);
-		color: var(--color-muted);
-		text-align: center;
-		font-size: 0.925rem;
+	.card-body {
+		position: relative;
 	}
 </style>
