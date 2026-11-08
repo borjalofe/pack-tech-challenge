@@ -36,6 +36,18 @@ pnpm run preview # serve the production build
 
 PRs to `main` run `.github/workflows/pr-gate.yml` (gate v0): typecheck + lint, unit tests, and `pnpm run audit` at high severity. Local equivalents are the commands above.
 
+## Daily vulnerability scan
+
+Independent of the PR gate: `.github/workflows/daily-audit.yml` runs `pnpm run audit` (high threshold) on a daily schedule and on demand.
+
+Manual run (Actions UI or CLI):
+
+```sh
+gh workflow run "Daily audit" --ref main
+```
+
+Container image scanning is **N/A** until this repo ships a container image.
+
 ## Decisions
 
 - [0001 — pnpm as package manager](docs/decisions/0001-pnpm-as-package-manager.md)
