@@ -49,6 +49,23 @@ export const POST: RequestHandler = async ({ request }) => {
 	);
 
 	// Clients get the resource id; storagePath stays server-internal in later list APIs.
-	const { storagePath: _storagePath, ...safe } = created;
-	return json(safe, { status: 201 });
+	return json(
+		{
+			id: created.id,
+			title: created.title,
+			description: created.description,
+			category: created.category,
+			language: created.language,
+			provider: created.provider,
+			roles: created.roles,
+			fileOriginalName: created.fileOriginalName,
+			fileMimeType: created.fileMimeType,
+			fileSize: created.fileSize,
+			viewCount: created.viewCount,
+			uploadedBy: created.uploadedBy,
+			createdAt: created.createdAt,
+			updatedAt: created.updatedAt
+		},
+		{ status: 201 }
+	);
 };

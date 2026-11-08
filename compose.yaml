@@ -1,4 +1,4 @@
-# Local Postgres only (db). Upload/app Compose services land in a later issue.
+# Local stack: Postgres `db` + SvelteKit `app` (upload API).
 name: pack-tech-challenge
 
 services:
@@ -22,5 +22,27 @@ services:
       retries: 10
       start_period: 10s
 
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # In-compose hostname is the Compose service name `db` (ADR 0002).
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      PORT: ${APP_PORT:-3000}
+      FILE_STORAGE_ROOT: /data/file-store
+      NODE_ENV: production
+    ports:
+      - '${APP_PORT:-3000}:3000'
+    volumes:
+      - app_files:/data/file-store
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   postgres_data:
+  app_files:

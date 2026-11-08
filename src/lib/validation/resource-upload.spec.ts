@@ -47,9 +47,9 @@ describe('resourceCreateSchema (#17)', () => {
 
 	it('requires at least one Pack role and dedupes', () => {
 		expect(resourceCreateSchema.safeParse({ ...validCreate, roles: [] }).success).toBe(false);
-		expect(
-			resourceCreateSchema.safeParse({ ...validCreate, roles: ['unknown'] }).success
-		).toBe(false);
+		expect(resourceCreateSchema.safeParse({ ...validCreate, roles: ['unknown'] }).success).toBe(
+			false
+		);
 
 		const parsed = resourceCreateSchema.parse({
 			...validCreate,
