@@ -1,0 +1,12 @@
+node_modules
+.svelte-kit
+.build
+build
+.output
+.git
+.env
+.env.*
+!.env.example
+var/file-store
+**/*.md
+!README.md

@@ -1,4 +1,4 @@
-/** Pack dropdown catalog values (data only — Zod arrives in a later issue). */
+/** Pack dropdown catalog values + file caps shared with Zod upload schema. */
 
 export const RESOURCE_ROLES = ['mentor-coach', 'mentee-coachee'] as const;
 export type ResourceRole = (typeof RESOURCE_ROLES)[number];
@@ -38,3 +38,18 @@ export const RESOURCE_TITLE_MAX = 200;
 export const RESOURCE_DESCRIPTION_MAX = 1000;
 export const RESOURCE_FILE_NAME_MAX = 255;
 export const RESOURCE_FILE_SIZE_MAX = 50 * 1024 * 1024; // 50 MiB
+
+/** Allowlisted MIME types for upload metadata validation. */
+export const RESOURCE_FILE_MIME_TYPES = [
+	'application/pdf',
+	'application/msword',
+	'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+	'application/vnd.ms-powerpoint',
+	'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+	'video/mp4',
+	'video/webm',
+	'image/png',
+	'image/jpeg',
+	'text/plain'
+] as const;
+export type ResourceFileMimeType = (typeof RESOURCE_FILE_MIME_TYPES)[number];

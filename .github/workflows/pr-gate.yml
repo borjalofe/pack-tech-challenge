@@ -87,6 +87,7 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql://pack:pack_ci_change_me@localhost:5432/pack_challenge
+      FILE_STORAGE_ROOT: ${{ github.workspace }}/var/file-store-ci
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -111,8 +112,8 @@ jobs:
       - name: Seed catalog
         run: pnpm db:seed
 
-      - name: Migrate integration test
-        run: pnpm test src/lib/server/db/migrate.integration.spec.ts
+      - name: Migrate + upload integration tests
+        run: pnpm test src/lib/server/db/migrate.integration.spec.ts src/lib/server/resources/create-resource.integration.spec.ts
 
   audit:
     name: audit

@@ -20,11 +20,12 @@
 		"test": "vitest run",
 		"audit": "pnpm audit --audit-level=high",
 		"db:migrate": "tsx src/lib/server/db/migrate.ts",
-		"db:seed": "tsx src/lib/server/db/seed.ts"
+		"db:seed": "tsx src/lib/server/db/seed.ts",
+		"start": "node build"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
-		"@sveltejs/adapter-auto": "^8.0.0",
+		"@sveltejs/adapter-node": "^6.0.1",
 		"@sveltejs/kit": "^3.0.0",
 		"@sveltejs/vite-plugin-svelte": "^7.2.0",
 		"@types/node": "^22",
@@ -50,6 +51,7 @@
 	},
 	"dependencies": {
 		"drizzle-orm": "^0.45.4",
-		"postgres": "^4.1.0"
+		"postgres": "^4.1.0",
+		"zod": "^4.6.7"
 	}
 }

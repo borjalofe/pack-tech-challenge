@@ -1,3 +1,10 @@
 engineStrict: true
 allowBuilds:
   esbuild: true
+
+# SCA: force patched transitive versions (moderate advisories; gate fails on high+).
+overrides:
+  # GHSA-67mh-4wv8-2f99 — drizzle-kit → @esbuild-kit → esbuild<=0.24.2
+  '@esbuild-kit/core-utils>esbuild': '^0.25.12'
+  # GHSA-g3hv-75wg-m249 — eslint / typescript-eslint → minimatch<11.0.1
+  minimatch: '>=11.0.1'
