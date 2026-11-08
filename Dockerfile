@@ -25,6 +25,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
 COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/src/lib/server/db ./src/lib/server/db
+COPY --from=build /app/src/lib/catalog.ts ./src/lib/catalog.ts
 COPY --from=build /app/drizzle.config.ts ./drizzle.config.ts
 COPY scripts/docker-entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
