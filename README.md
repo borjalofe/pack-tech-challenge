@@ -25,9 +25,16 @@ Other commands that work today:
 
 ```sh
 pnpm run check   # svelte-check / TypeScript
+pnpm lint        # prettier + eslint
+pnpm test        # vitest unit
+pnpm run audit   # SCA, fail on high+
 pnpm run build   # production build
 pnpm run preview # serve the production build
 ```
+
+## PR gate
+
+PRs to `main` run `.github/workflows/pr-gate.yml` (gate v0): typecheck + lint, unit tests, and `pnpm run audit` at high severity. Local equivalents are the commands above.
 
 ## Decisions
 
