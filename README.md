@@ -10,9 +10,10 @@ SvelteKit + TypeScript app for the Pack resources take-home. Package manager: **
 | Bundler | Vite |
 | Package manager | pnpm (`packageManager` + lockfile) |
 | Database | Postgres 16 via Compose service `db` + Drizzle migrations |
-| Upload validation | Shared Zod (`src/lib/validation/resource-upload.ts`) |
+| Upload validation | Shared Zod (`src/lib/validation/resource-upload.ts`) + client File adapter |
 | File blobs | Local filesystem (`FILE_STORAGE_ROOT`) |
 | UI tokens | Pack CSS vars (`src/lib/styles/tokens.css`) — primary `#FC8034` |
+| Upload UI | Pack modal (`UploadResourceDialog`) → `POST /api/resources` |
 
 ## How to run (Compose app + db)
 
@@ -23,9 +24,12 @@ cp .env.example .env
 docker compose up --build
 ```
 
+Set `ORIGIN` in `.env` before `pnpm build` / Compose image build so it matches the browser URL (multipart CSRF). Compose passes `ORIGIN=http://localhost:${APP_PORT}` as a build arg.
+
 - App: [http://localhost:3000](http://localhost:3000) (`APP_PORT`)
 - Postgres: `localhost:${POSTGRES_PORT:-5432}`
-- Upload: `POST /api/resources` (multipart)
+- Upload UI: Resources → **Upload** (modal uses shared Zod, then `POST /api/resources`)
+- Upload API: `POST /api/resources` (multipart)
 - List: `GET /api/resources` (public fields for the table; no `storagePath`)
 
 Example upload:
@@ -72,25 +76,34 @@ Other commands that work today:
 pnpm run check   # svelte-check / TypeScript
 pnpm lint        # prettier + eslint
 pnpm test        # vitest unit (+ DB integration when DATABASE_URL is set)
+pnpm test:e2e    # Playwright upload modal (build with matching ORIGIN first)
 pnpm run audit   # SCA, fail on high+
-pnpm run build   # production build (Node adapter)
+pnpm run build   # production build (Node adapter; reads ORIGIN for CSRF)
 pnpm start       # node build
 pnpm run preview # vite preview
 ```
 
 Local reset: `docker compose down -v` then bring the stack up again.
 
-## Brand / chrome
+## Brand / chrome + upload form
 
-Pack visual tokens and Resources **page chrome only** (header, card, tabs, Field, disabled Upload, FAB). No upload modal and no table body yet.
+Pack visual tokens, Resources page chrome (header, card, tabs, Field, Upload, FAB), and the **Upload Resource** modal (Images 1–2 landmarks). Table body is not shipped yet.
 
 - Tokens: [`src/lib/styles/tokens.css`](src/lib/styles/tokens.css) / [`src/lib/styles/tokens.ts`](src/lib/styles/tokens.ts)
 - Notes + screenshots: [`docs/brand/`](docs/brand/)
-- Shell: `src/lib/components/pack/`
+- Shell + modal: `src/lib/components/pack/`
+- Shared Zod: `src/lib/validation/resource-upload.ts` (client adapter: `resource-upload-client.ts`)
+- Dropdown catalog (client-safe): `src/lib/catalog.ts`
 
 ## PR gate
 
-PRs to `main` run `.github/workflows/pr-gate.yml` (gate v0): typecheck + lint, unit tests, db migrate/seed + upload integration, and `pnpm run audit` at high severity.
+PRs to `main` run `.github/workflows/pr-gate.yml` (gate v0): typecheck + lint, unit tests, db migrate/seed + upload integration, Playwright upload-modal e2e, and `pnpm run audit` at high severity.
+
+```sh
+# Local e2e (db up, same ORIGIN baked into the build as Playwright baseURL)
+ORIGIN=http://localhost:4173 pnpm run build
+E2E_BASE_URL=http://localhost:4173 pnpm test:e2e
+```
 
 ## Daily vulnerability scan
 
