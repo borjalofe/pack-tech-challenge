@@ -18,7 +18,9 @@
 		"format": "prettier --write .",
 		"test:unit": "vitest",
 		"test": "vitest run",
-		"audit": "pnpm audit --audit-level=high"
+		"audit": "pnpm audit --audit-level=high",
+		"db:migrate": "tsx src/lib/server/db/migrate.ts",
+		"db:seed": "tsx src/lib/server/db/seed.ts"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

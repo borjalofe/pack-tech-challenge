@@ -8,11 +8,7 @@ export const RESOURCE_ROLE_LABELS: Record<ResourceRole, string> = {
 	'mentee-coachee': 'Mentee / Coachee'
 };
 
-export const RESOURCE_CATEGORIES = [
-	'conflict-resolution',
-	'leadership',
-	'communication'
-] as const;
+export const RESOURCE_CATEGORIES = ['conflict-resolution', 'leadership', 'communication'] as const;
 export type ResourceCategory = (typeof RESOURCE_CATEGORIES)[number];
 
 export const RESOURCE_CATEGORY_LABELS: Record<ResourceCategory, string> = {
