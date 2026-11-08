@@ -1,22 +1,28 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { PACK_NAV_ITEMS } from './chrome.js';
 </script>
 
 <header class="app-header" data-slot="app-header">
-	<a class="brand" href="#resources" data-slot="app-header-wordmark">pack</a>
+	<a class="brand" href={resolve('/')} data-slot="app-header-wordmark">pack</a>
 
 	<nav class="nav" aria-label="Primary" data-slot="app-header-nav">
 		{#each PACK_NAV_ITEMS as item (item.label)}
-			<a
-				href={item.href}
-				class="nav-link"
-				class:active={item.active}
-				aria-current={item.active ? 'page' : undefined}
-				data-slot="app-header-nav-link"
-				data-active={item.active ? 'true' : undefined}
-			>
-				{item.label}
-			</a>
+			{#if item.active}
+				<a
+					href={resolve('/')}
+					class="nav-link active"
+					aria-current="page"
+					data-slot="app-header-nav-link"
+					data-active="true"
+				>
+					{item.label}
+				</a>
+			{:else}
+				<span class="nav-link" data-slot="app-header-nav-link" aria-disabled="true"
+					>{item.label}</span
+				>
+			{/if}
 		{/each}
 	</nav>
 
@@ -73,10 +79,6 @@
 		font-weight: 500;
 		text-decoration: none;
 		white-space: nowrap;
-	}
-
-	.nav-link:hover {
-		color: var(--color-foreground);
 	}
 
 	.nav-link.active {

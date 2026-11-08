@@ -19,10 +19,11 @@ describe('Pack visual tokens (#19)', () => {
 
 	it('wires those anchors into CSS custom properties', () => {
 		const css = readFileSync(tokensCssPath, 'utf8');
-		expect(css).toContain('--color-primary: #FC8034');
-		expect(css).toContain('--color-page: #F9FAFC');
-		expect(css).toContain('--color-surface: #FFFFFF');
-		expect(css).toContain('--color-success: #1C9C70');
+		const normalized = css.toLowerCase();
+		expect(normalized).toContain('--color-primary: #fc8034');
+		expect(normalized).toContain('--color-page: #f9fafc');
+		expect(normalized).toContain('--color-surface: #ffffff');
+		expect(normalized).toContain('--color-success: #1c9c70');
 		expect(css).toContain('--shadow-soft:');
 		expect(css).toContain('--font-sans:');
 	});
