@@ -2,6 +2,9 @@
 	import AppHeader from './AppHeader.svelte';
 	import ResourcesToolbar from './ResourcesToolbar.svelte';
 	import SupportChatFab from './SupportChatFab.svelte';
+	import UploadResourceDialog from './UploadResourceDialog.svelte';
+
+	let uploadOpen = $state(false);
 </script>
 
 <div class="shell" data-slot="dashboard-shell">
@@ -12,7 +15,7 @@
 			<header class="card-head">
 				<h1>Resources</h1>
 			</header>
-			<ResourcesToolbar />
+			<ResourcesToolbar onUploadClick={() => (uploadOpen = true)} />
 			<div class="body" data-slot="resources-body-placeholder">
 				<p>
 					Table body lands in a later issue. Chrome (header, card, tabs, Field, Upload, FAB) is
@@ -23,6 +26,7 @@
 	</main>
 
 	<SupportChatFab />
+	<UploadResourceDialog bind:open={uploadOpen} />
 </div>
 
 <style>

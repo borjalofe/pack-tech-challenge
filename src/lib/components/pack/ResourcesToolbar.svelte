@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { PACK_RESOURCE_TABS } from './chrome.js';
 
+	type Props = {
+		onUploadClick?: () => void;
+	};
+
+	let { onUploadClick }: Props = $props();
+
 	let activeTab = $state<(typeof PACK_RESOURCE_TABS)[number]>('All');
 	let query = $state('');
 </script>
@@ -57,7 +63,7 @@
 		<input type="search" placeholder="Field" bind:value={query} disabled aria-disabled="true" />
 	</label>
 
-	<button type="button" class="upload" data-slot="upload-button" disabled aria-disabled="true">
+	<button type="button" class="upload" data-slot="upload-button" onclick={() => onUploadClick?.()}>
 		Upload
 	</button>
 </div>
@@ -141,8 +147,7 @@
 		color: var(--color-primary-foreground);
 		padding: 0.55rem 1rem;
 		font-weight: 600;
-		cursor: not-allowed;
-		opacity: 0.85;
+		cursor: pointer;
 	}
 
 	.sr-only {
