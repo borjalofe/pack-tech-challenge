@@ -63,8 +63,10 @@ export function attachmentContentDisposition(originalName: string): string {
 			.trim() || 'download';
 	// `filename=` must be a ByteString (Latin-1); keep Unicode only in filename*.
 	const ascii =
-		safe.replace(/[^\x20-\x7E]/g, '_').replace(/[\s_]+/g, '_').replace(/^_|_$/g, '') ||
-		'download';
+		safe
+			.replace(/[^\x20-\x7E]/g, '_')
+			.replace(/[\s_]+/g, '_')
+			.replace(/^_|_$/g, '') || 'download';
 	const encoded = encodeURIComponent(safe);
 	return `attachment; filename="${ascii}"; filename*=UTF-8''${encoded}`;
 }
