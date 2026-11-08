@@ -9,6 +9,7 @@ SvelteKit + TypeScript app for the Pack resources take-home. Package manager: **
 | App | SvelteKit (Svelte 5) + TypeScript |
 | Bundler | Vite |
 | Package manager | pnpm (`packageManager` + lockfile) |
+| Database | Postgres 16 via Compose service `db` + Drizzle migrations |
 
 ## How to run
 
@@ -32,9 +33,24 @@ pnpm run build   # production build
 pnpm run preview # serve the production build
 ```
 
+## Database (Compose `db` only)
+
+**Prerequisite:** Docker.
+
+```sh
+cp .env.example .env
+docker compose up -d db
+pnpm db:migrate
+pnpm db:seed
+```
+
+- Postgres: `localhost:${POSTGRES_PORT:-5432}` (see `.env`)
+- Local reset: `docker compose down -v` then `up -d db` + migrate + seed again
+- No Compose `app` service yet
+
 ## PR gate
 
-PRs to `main` run `.github/workflows/pr-gate.yml` (gate v0): typecheck + lint, unit tests, and `pnpm run audit` at high severity. Local equivalents are the commands above.
+PRs to `main` run `.github/workflows/pr-gate.yml` (gate v0): typecheck + lint, unit tests, db migrate/seed integration, and `pnpm run audit` at high severity. Local equivalents are the commands above (plus the database section for `db`).
 
 ## Daily vulnerability scan
 
@@ -51,3 +67,5 @@ Container image scanning is **N/A** until this repo ships a container image.
 ## Decisions
 
 - [0001 — pnpm as package manager](docs/decisions/0001-pnpm-as-package-manager.md)
+- [0002 — Compose Postgres + env contract](docs/decisions/0002-compose-postgres-env-contract.md)
+- [0003 — Drizzle for resources migration + catalog seed](docs/decisions/0003-drizzle-resources-migration.md)
