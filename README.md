@@ -25,6 +25,7 @@ docker compose up --build
 - App: [http://localhost:3000](http://localhost:3000) (`APP_PORT`)
 - Postgres: `localhost:${POSTGRES_PORT:-5432}`
 - Upload: `POST /api/resources` (multipart)
+- List: `GET /api/resources` (public fields for the table; no `storagePath`)
 
 Example upload:
 
@@ -38,6 +39,14 @@ curl -sS -X POST "http://localhost:3000/api/resources" \
   -F "roles=mentor-coach" \
   -F "file=@./path/to/file.pdf;type=application/pdf"
 ```
+
+Example list:
+
+```sh
+curl -sS "http://localhost:3000/api/resources"
+```
+
+Response shape: `{ items, total }`. Each item includes table-oriented fields such as `title`, `fileOriginalName` (path/filename column), `viewCount`, `uploadedBy`, `provider`, and `category` (type), plus other public metadata. Search/filter query params are not wired yet.
 
 Shared Zod import path for later UI: `src/lib/validation/resource-upload.ts` (or `#lib/validation/resource-upload.js`).
 
@@ -54,7 +63,7 @@ pnpm db:seed
 pnpm run dev
 ```
 
-App (Vite): [http://localhost:5173](http://localhost:5173) — same `POST /api/resources` against the host-running SvelteKit process.
+App (Vite): [http://localhost:5173](http://localhost:5173) — same `POST` / `GET /api/resources` against the host-running SvelteKit process.
 
 Other commands that work today:
 

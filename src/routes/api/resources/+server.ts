@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { createResourceFromMultipart } from '#lib/server/resources/create-resource.js';
+import { listResources } from '#lib/server/resources/list-resources.js';
 
 function asOptionalString(value: FormDataEntryValue | null): string | undefined {
 	if (value == null) {
@@ -8,6 +9,11 @@ function asOptionalString(value: FormDataEntryValue | null): string | undefined 
 	}
 	return String(value);
 }
+
+export const GET: RequestHandler = async () => {
+	const listed = await listResources();
+	return json(listed);
+};
 
 export const POST: RequestHandler = async ({ request }) => {
 	const form = await request.formData();
@@ -48,7 +54,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		uploaded
 	);
 
-	// Clients get the resource id; storagePath stays server-internal in later list APIs.
+	// Clients get the resource id; storagePath stays server-internal.
 	return json(
 		{
 			id: created.id,
