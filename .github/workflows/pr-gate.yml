@@ -67,6 +67,53 @@ jobs:
       - name: Unit tests
         run: pnpm test
 
+  # Postgres migrate + catalog seed against ephemeral db (#16).
+  db:
+    name: db
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: pack
+          POSTGRES_PASSWORD: pack_ci_change_me
+          POSTGRES_DB: pack_challenge
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pack -d pack_challenge"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://pack:pack_ci_change_me@localhost:5432/pack_challenge
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply migrations
+        run: pnpm db:migrate
+
+      - name: Seed catalog
+        run: pnpm db:seed
+
+      - name: Migrate integration test
+        run: pnpm test src/lib/server/db/migrate.integration.spec.ts
+
   audit:
     name: audit
     runs-on: ubuntu-latest
