@@ -13,7 +13,7 @@ import {
 	RESOURCE_PROVIDERS,
 	RESOURCE_ROLES,
 	RESOURCE_TITLE_MAX
-} from '../server/db/catalog.js';
+} from '../catalog.js';
 
 export const resourceRoleSchema = z.enum(RESOURCE_ROLES);
 export const resourceCategorySchema = z.enum(RESOURCE_CATEGORIES);

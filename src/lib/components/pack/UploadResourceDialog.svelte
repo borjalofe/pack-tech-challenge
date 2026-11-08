@@ -8,7 +8,7 @@
 		RESOURCE_PROVIDERS,
 		RESOURCE_ROLE_LABELS,
 		RESOURCE_ROLES
-	} from '#lib/server/db/catalog.js';
+	} from '#lib/catalog.js';
 	import { createResource } from '#lib/api/resources.js';
 	import { parseUploadFormWithFile } from '#lib/validation/resource-upload-client.js';
 	import { UPLOAD_DIALOG_MAX_WIDTH_PX } from './upload-dialog.js';

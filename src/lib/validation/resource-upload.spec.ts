@@ -4,7 +4,7 @@ import {
 	RESOURCE_FILE_SIZE_MAX,
 	RESOURCE_ROLES,
 	RESOURCE_TITLE_MAX
-} from '../server/db/catalog.js';
+} from '../catalog.js';
 import { resourceCreateSchema } from './resource-upload.js';
 
 const validCreate = {
