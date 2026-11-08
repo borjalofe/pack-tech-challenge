@@ -44,6 +44,23 @@ export class LocalFileStore {
 			return false;
 		}
 	}
+
+	/**
+	 * Resolve a stored object to an absolute path under the root.
+	 * Returns null when the key is unsafe or the file is missing (no directory listing).
+	 */
+	async resolveExisting(storagePath: string): Promise<string | null> {
+		const absolutePath = resolveStoragePath(this.root, storagePath);
+		if (!absolutePath) {
+			return null;
+		}
+		try {
+			await access(absolutePath);
+			return absolutePath;
+		} catch {
+			return null;
+		}
+	}
 }
 
 export function getFileStorageRoot(): string {
