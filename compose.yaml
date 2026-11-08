@@ -26,6 +26,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # Baked into kit.paths.origin for multipart CSRF (must match browser URL).
+        ORIGIN: http://localhost:${APP_PORT:-3000}
     restart: unless-stopped
     env_file:
       - .env

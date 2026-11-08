@@ -12,7 +12,13 @@ export default defineConfig({
 			},
 
 			// Node adapter for Compose `app` (and local `pnpm build` + `node build`).
-			adapter: adapter()
+			adapter: adapter(),
+
+			// Required for HTTP multipart CSRF: adapter-node otherwise assumes https.
+			// Set ORIGIN at build time (see .env.example / Compose build args).
+			paths: {
+				origin: process.env.ORIGIN
+			}
 		})
 	],
 	test: {

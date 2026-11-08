@@ -10,6 +10,9 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
+# Must match the browser URL (Compose publishes APP_PORT → localhost).
+ARG ORIGIN=http://localhost:3000
+ENV ORIGIN=$ORIGIN
 COPY . .
 RUN pnpm build
 
