@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { createResourceFromMultipart } from './create-resource.js';
-import { getDb } from '../db/client.js';
+import { closeDb, getDb } from '../db/client.js';
 import { resources } from '../db/schema.js';
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -19,6 +19,7 @@ describeDb('createResourceFromMultipart (#17)', () => {
 	});
 
 	afterAll(async () => {
+		await closeDb();
 		await rm(fileRoot, { recursive: true, force: true });
 	});
 
