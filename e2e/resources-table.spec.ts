@@ -12,6 +12,8 @@ const fixturePdf = path.join(
 
 test.describe('Resources table + toast (#21)', () => {
 	test('Image 3 structure: columns, pills, sort, row actions', async ({ page }) => {
+		const title = `Table E2E Resource ${Date.now()}`;
+
 		await page.goto('/');
 
 		const table = page.locator('[data-slot="resources-table"]');
@@ -27,7 +29,7 @@ test.describe('Resources table + toast (#21)', () => {
 
 		// Seeded empty table still exposes landmarks via header; after upload we assert pills/actions.
 		await page.getByRole('button', { name: 'Upload' }).click();
-		await page.locator('[data-slot="upload-resource-title"]').fill('Table E2E Resource');
+		await page.locator('[data-slot="upload-resource-title"]').fill(title);
 		await page
 			.locator('[data-slot="upload-resource-description"]')
 			.fill('Image 3 structure coverage');
@@ -49,7 +51,7 @@ test.describe('Resources table + toast (#21)', () => {
 		expect(PACK_TOKENS.color.success.toLowerCase()).toBe('#1c9c70');
 
 		const row = page.locator('[data-slot="resources-table-row"]').filter({
-			hasText: 'Table E2E Resource'
+			hasText: title
 		});
 		await expect(row).toBeVisible();
 		await expect(row.locator('[data-slot="resources-table-provider-pill"]')).toHaveText('Pack');
