@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	PACK_NAV_ITEMS,
-	PACK_RESOURCE_TABS,
-	packChromeLandmarks
-} from './chrome.js';
+import { PACK_NAV_ITEMS, PACK_RESOURCE_TABS, packChromeLandmarks } from './chrome.js';
 
 describe('Pack chrome shell (#19)', () => {
 	it('exposes Image-3 chrome landmarks without table or modal ownership', () => {
