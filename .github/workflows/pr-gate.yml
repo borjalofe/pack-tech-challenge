@@ -119,6 +119,66 @@ jobs:
           src/lib/server/resources/create-resource.integration.spec.ts
           src/lib/server/resources/list-resources.integration.spec.ts
 
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: pack
+          POSTGRES_PASSWORD: pack_ci_change_me
+          POSTGRES_DB: pack_challenge
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pack -d pack_challenge"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://pack:pack_ci_change_me@localhost:5432/pack_challenge
+      FILE_STORAGE_ROOT: ${{ github.workspace }}/var/file-store-e2e
+      CI: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Apply migrations
+        run: pnpm db:migrate
+
+      - name: Seed catalog
+        run: pnpm db:seed
+
+      - name: Production build (ORIGIN matches Playwright baseURL)
+        env:
+          ORIGIN: http://localhost:4173
+          E2E_PORT: 4173
+        run: pnpm run build
+
+      - name: Upload Resource e2e
+        env:
+          E2E_PORT: 4173
+          E2E_BASE_URL: http://localhost:4173
+        run: pnpm test:e2e
+
   audit:
     name: audit
     runs-on: ubuntu-latest
