@@ -85,19 +85,21 @@ pnpm run preview # vite preview
 
 Local reset: `docker compose down -v` then bring the stack up again.
 
-## Brand / chrome + upload form
+## Brand / chrome + upload form + table
 
-Pack visual tokens, Resources page chrome (header, card, tabs, Field, Upload, FAB), and the **Upload Resource** modal (Images 1–2 landmarks). Table body is not shipped yet.
+Pack visual tokens, Resources page chrome (header, card, tabs, Field, Upload, FAB), the **Upload Resource** modal (Images 1–2), and the **table body + success toast** (Image 3).
 
 - Tokens: [`src/lib/styles/tokens.css`](src/lib/styles/tokens.css) / [`src/lib/styles/tokens.ts`](src/lib/styles/tokens.ts)
 - Notes + screenshots: [`docs/brand/`](docs/brand/)
-- Shell + modal: `src/lib/components/pack/`
+- Shell / modal / table / toast: `src/lib/components/pack/`
 - Shared Zod: `src/lib/validation/resource-upload.ts` (client adapter: `resource-upload-client.ts`)
 - Dropdown catalog (client-safe): `src/lib/catalog.ts`
+- Table binds to `GET /api/resources` (SSR load + refresh after upload)
+- Toast copy after successful upload: `Resource Uploaded Successfully!` (success token `#1C9C70`)
 
 ## PR gate
 
-PRs to `main` run `.github/workflows/pr-gate.yml` (gate v0): typecheck + lint, unit tests, db migrate/seed + upload integration, Playwright upload-modal e2e, and `pnpm run audit` at high severity.
+PRs to `main` run `.github/workflows/pr-gate.yml` (gate v0): typecheck + lint, unit tests, db migrate/seed + upload integration, Playwright upload-modal + table/toast e2e, and `pnpm run audit` at high severity.
 
 ```sh
 # Local e2e (db up, same ORIGIN baked into the build as Playwright baseURL)
