@@ -39,7 +39,7 @@ test.describe('Row download/open happy path (#22)', () => {
 		await expect(row).toBeVisible();
 
 		const downloadPromise = page.waitForEvent('download');
-		await row.locator('[data-slot="resources-table-open"]').click();
+		await row.click();
 		const download = await downloadPromise;
 
 		expect(download.suggestedFilename()).toBe('sample.pdf');
