@@ -160,7 +160,20 @@ docker run --rm -p 3000:3000 \
 ```
 
 - `GET /healthz` → `{ status, db }` (`db` is `ok` | `error` | `skipped`; HTTP 503 when degraded).
-- Compose `docker compose up --build` remains the supported full local stack; Fly wiring is a later issue — **no public deploy URL is claimed here**.
+- Compose `docker compose up --build` remains the supported full local stack.
+
+### Fly wiring checklist (config only — no public URL yet)
+
+Repo ships `fly.toml` ([ADR 0006](docs/decisions/0006-deploy-host-fly.md)). This section is a **wiring checklist**; a verified public URL is issue [#48](https://github.com/borjalofe/pack-tech-challenge/issues/48), not claimed here.
+
+1. `fly apps create pack-tech-challenge` (or rename `app` in `fly.toml` to match).
+2. Postgres: `fly postgres create` then `fly postgres attach <pg-app> -a pack-tech-challenge` (sets `DATABASE_URL`), **or** `fly secrets set DATABASE_URL=…` for an external Postgres.
+3. Secrets (names in `.env.example`; values only via `fly secrets` — never git):
+   - **Required now:** `DATABASE_URL`, and bake matching `ORIGIN` at deploy (`fly deploy --build-arg ORIGIN=https://…`).
+   - **Optional volume:** `fly volumes create pack_files --region iad --size 1` (matches `[mounts]` for `FILE_STORAGE_ROOT` until Epic #25).
+   - **Do not set** `SEED_DEMO_DATA` — `[deploy].release_command` runs `/fly-release.sh` → `pnpm db:migrate` + `pnpm db:seed` (catalogs only).
+   - **Reserved (Epic #25, unimplemented):** `BLOB_DRIVER`, `S3_*`, `R2_*`.
+4. Healthcheck: `[[http_service.checks]]` → `GET /healthz` (same path as the image `HEALTHCHECK`).
 
 ### Playwright e2e locally
 
@@ -227,5 +240,5 @@ These are deferred nice-to-haves tracked as review/intent only ([epic #12](https
 | --- | --- | --- |
 | Wire search + tab filters | Field/tabs are presentational in M1; filter query params are not on the list API | [#24](https://github.com/borjalofe/pack-tech-challenge/issues/24) |
 | Cloud object storage | Local `FILE_STORAGE_ROOT` keeps the ≤3h path small; cloud would swap the store adapter | [#25](https://github.com/borjalofe/pack-tech-challenge/issues/25) |
-| Deploy on Fly.io | Host chosen ([ADR 0006](docs/decisions/0006-deploy-host-fly.md)); runtime/`fly.toml`/verify not shipped | [#26](https://github.com/borjalofe/pack-tech-challenge/issues/26) / [#44](https://github.com/borjalofe/pack-tech-challenge/issues/44) |
+| Deploy on Fly.io | Host + runtime + `fly.toml`/secrets checklist shipped; **public URL verify** still open | [#26](https://github.com/borjalofe/pack-tech-challenge/issues/26) / [#48](https://github.com/borjalofe/pack-tech-challenge/issues/48) |
 | In-app file viewer | M1 opens/downloads via attachment; rich in-browser preview is separate | [#27](https://github.com/borjalofe/pack-tech-challenge/issues/27) |
