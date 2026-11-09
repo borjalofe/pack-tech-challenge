@@ -11,8 +11,8 @@ export default defineConfig({
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
 
-			// Node adapter for Compose `app` (and local `pnpm build` + `node build`).
-			adapter: adapter(),
+			// Production Node server (`pnpm build` → `build/`, then `pnpm start` / Docker).
+			adapter: adapter({ out: 'build' }),
 
 			// Required for HTTP multipart CSRF: adapter-node otherwise assumes https.
 			// Set ORIGIN at build time (see .env.example / Compose build args).
