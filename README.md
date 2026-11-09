@@ -117,11 +117,14 @@ cp .env.example .env
 docker compose up -d db
 pnpm install
 pnpm db:migrate
-pnpm db:seed
+pnpm db:seed        # catalogs only — resources stay empty (prod-safe)
+pnpm db:seed:demo   # optional local DX: one sample resource row + blob
 pnpm run dev
 ```
 
 App (Vite): [http://localhost:5173](http://localhost:5173).
+
+`pnpm db:seed` (and Compose/`Fly` entrypoints) load **form catalogs only**. Demo resource rows are **opt-in**: `pnpm db:seed:demo`, or `SEED_DEMO_DATA=true` for the Compose app entrypoint. **Do not set `SEED_DEMO_DATA` on production/Fly** so the public URL starts with an empty table (ADR 0006 / #45).
 
 ```sh
 pnpm run check   # svelte-check / TypeScript
@@ -158,6 +161,7 @@ Specs: `e2e/upload-resource.spec.ts`, `e2e/resources-table.spec.ts`, `e2e/row-do
 | Brand screenshots / token notes | [`docs/brand/`](docs/brand/) |
 | Path safety (no `../`) | `src/lib/server/storage/object-key.ts`, `open-resource.spec.ts` |
 | E2E happy path | `e2e/row-download.spec.ts` (upload → toast → row → download bytes) |
+| Empty resources after default migrate | `src/lib/server/db/seed-demo.integration.spec.ts` |
 
 ## Lessons learned (this repo)
 
