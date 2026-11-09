@@ -1,13 +1,12 @@
 /**
  * Default seed: form catalogs only. Safe for Compose app start and Fly release.
  * Demo resource rows: `pnpm db:seed:demo` or SEED_DEMO_DATA=true (see seed-demo.ts).
+ * Demo deps are loaded lazily so production/Fly images need no storage modules for catalog seed.
  */
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import { getFileStorageRoot } from '../storage/local-file-store.js';
 import { loadEnv } from './load-env.js';
 import { seedCatalog } from './seed-catalog.js';
-import { seedDemoResources } from './seed-demo.js';
 
 loadEnv();
 
@@ -25,6 +24,8 @@ try {
 	console.log(`Catalog seed upserted (${catalogCount} rows)`);
 
 	if (process.env.SEED_DEMO_DATA === 'true') {
+		const { getFileStorageRoot } = await import('../storage/local-file-store.js');
+		const { seedDemoResources } = await import('./seed-demo.js');
 		const inserted = await seedDemoResources(db, getFileStorageRoot());
 		console.log(
 			inserted > 0

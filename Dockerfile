@@ -35,6 +35,8 @@ COPY --chown=pack:pack --from=deps /app/node_modules ./node_modules
 COPY --chown=pack:pack --from=build /app/build ./build
 COPY --chown=pack:pack --from=build /app/drizzle ./drizzle
 COPY --chown=pack:pack --from=build /app/src/lib/server/db ./src/lib/server/db
+# Opt-in SEED_DEMO_DATA (Compose) may load LocalFileStore; catalog-only Fly release does not.
+COPY --chown=pack:pack --from=build /app/src/lib/server/storage ./src/lib/server/storage
 # seed re-exports shared catalog via ../../catalog.js
 COPY --chown=pack:pack --from=build /app/src/lib/catalog.ts ./src/lib/catalog.ts
 COPY --chown=pack:pack --from=build /app/drizzle.config.ts ./drizzle.config.ts
