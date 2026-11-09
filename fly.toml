@@ -1,0 +1,47 @@
+# Fly.io app wiring (#47 / ADR 0006). Does not claim a live public URL — see #48.
+# Create/attach Postgres and set secrets before the first real deploy.
+
+app = 'pack-tech-challenge'
+primary_region = 'iad'
+
+[build]
+  dockerfile = 'Dockerfile'
+  # CSRF: bake the public https origin at image build time (must match the browser URL).
+  # Example: fly deploy --build-arg ORIGIN=https://pack-tech-challenge.fly.dev
+  # Do not invent a URL here until #48 verifies the app is live.
+
+[deploy]
+  # Schema + form catalogs only. Never set SEED_DEMO_DATA on Fly.
+  # Requires ENTRYPOINT arg passthrough (see scripts/docker-entrypoint.sh).
+  release_command = '/fly-release.sh'
+
+[env]
+  NODE_ENV = 'production'
+  PORT = '3000'
+  FILE_STORAGE_ROOT = '/data/file-store'
+  # SEED_DEMO_DATA intentionally unset — production table stays empty of fixtures.
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+  [[http_service.checks]]
+    interval = '15s'
+    timeout = '5s'
+    grace_period = '40s'
+    method = 'GET'
+    path = '/healthz'
+
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
+
+# Local FS blobs until Epic #25. Create once: fly volumes create pack_files --region iad --size 1
+[mounts]
+  source = 'pack_files'
+  destination = '/data/file-store'
