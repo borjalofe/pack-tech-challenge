@@ -132,11 +132,35 @@ pnpm lint        # prettier + eslint
 pnpm test        # vitest unit (+ DB integration when DATABASE_URL is set)
 pnpm test:e2e    # Playwright (build with matching ORIGIN first)
 pnpm run audit   # SCA, fail on high+
-pnpm run build   # production build (Node adapter; reads ORIGIN for CSRF)
-pnpm start       # node build
+pnpm run build   # production build (adapter-node → build/)
+pnpm start       # NODE_ENV=production node build
 ```
 
 Local reset: `docker compose down -v` then bring the stack up again.
+
+### Production build / Docker image (no Fly URL yet)
+
+Host process (DB must already be migrated/seeded):
+
+```sh
+ORIGIN=http://localhost:3000 pnpm run build
+pnpm start
+# probe: curl -sS http://127.0.0.1:3000/healthz
+```
+
+Image (multi-stage `Dockerfile`, non-root `pack` user; `.env` is not copied):
+
+```sh
+docker build --build-arg ORIGIN=http://localhost:3000 -t pack-tech-challenge:local .
+docker run --rm -p 3000:3000 \
+  -e DATABASE_URL=postgresql://pack:pack_dev_change_me@host.docker.internal:5432/pack_challenge \
+  -e ORIGIN=http://localhost:3000 \
+  -e FILE_STORAGE_ROOT=/data/file-store \
+  pack-tech-challenge:local
+```
+
+- `GET /healthz` → `{ status, db }` (`db` is `ok` | `error` | `skipped`; HTTP 503 when degraded).
+- Compose `docker compose up --build` remains the supported full local stack; Fly wiring is a later issue — **no public deploy URL is claimed here**.
 
 ### Playwright e2e locally
 
