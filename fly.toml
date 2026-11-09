@@ -2,7 +2,7 @@
 # Create/attach Postgres and set secrets before the first real deploy.
 
 app = 'pack-tech-challenge'
-primary_region = 'iad'
+primary_region = 'fra'
 
 [build]
   dockerfile = 'Dockerfile'
@@ -41,7 +41,7 @@ primary_region = 'iad'
   cpu_kind = 'shared'
   cpus = 1
 
-# Local FS blobs until Epic #25. Create once: fly volumes create pack_files --region iad --size 1
+# Local FS blobs until Epic #25. Create once: fly volumes create pack_files --region fra --size 1
 [mounts]
   source = 'pack_files'
   destination = '/data/file-store'
