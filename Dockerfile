@@ -39,7 +39,8 @@ COPY --chown=pack:pack --from=build /app/src/lib/server/db ./src/lib/server/db
 COPY --chown=pack:pack --from=build /app/src/lib/catalog.ts ./src/lib/catalog.ts
 COPY --chown=pack:pack --from=build /app/drizzle.config.ts ./drizzle.config.ts
 COPY --chown=pack:pack scripts/docker-entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY --chown=pack:pack scripts/fly-release.sh /fly-release.sh
+RUN chmod +x /entrypoint.sh /fly-release.sh
 
 USER pack
 EXPOSE 3000

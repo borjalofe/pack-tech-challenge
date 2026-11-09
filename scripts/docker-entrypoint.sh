@@ -1,6 +1,12 @@
 #!/bin/sh
 set -eu
 
+# Fly release_command (and `docker run … <cmd>`) append args to ENTRYPOINT.
+# When present, run that command instead of the default migrate/seed/start path.
+if [ "$#" -gt 0 ]; then
+	exec "$@"
+fi
+
 echo "Applying Drizzle migrations…"
 pnpm db:migrate
 
