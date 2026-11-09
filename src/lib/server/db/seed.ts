@@ -1,17 +1,13 @@
+/**
+ * Default seed: form catalogs only. Safe for Compose app start and Fly release.
+ * Demo resource rows: `pnpm db:seed:demo` or SEED_DEMO_DATA=true (see seed-demo.ts).
+ */
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import {
-	RESOURCE_CATEGORIES,
-	RESOURCE_CATEGORY_LABELS,
-	RESOURCE_LANGUAGE_LABELS,
-	RESOURCE_LANGUAGES,
-	RESOURCE_PROVIDER_LABELS,
-	RESOURCE_PROVIDERS,
-	RESOURCE_ROLE_LABELS,
-	RESOURCE_ROLES
-} from './catalog.js';
+import { getFileStorageRoot } from '../storage/local-file-store.js';
 import { loadEnv } from './load-env.js';
-import { catalogEntries } from './schema.js';
+import { seedCatalog } from './seed-catalog.js';
+import { seedDemoResources } from './seed-demo.js';
 
 loadEnv();
 
@@ -21,35 +17,21 @@ if (!url) {
 	process.exit(1);
 }
 
-const rows = [
-	...RESOURCE_CATEGORIES.map((slug) => ({
-		kind: 'category' as const,
-		slug,
-		label: RESOURCE_CATEGORY_LABELS[slug]
-	})),
-	...RESOURCE_LANGUAGES.map((slug) => ({
-		kind: 'language' as const,
-		slug,
-		label: RESOURCE_LANGUAGE_LABELS[slug]
-	})),
-	...RESOURCE_PROVIDERS.map((slug) => ({
-		kind: 'provider' as const,
-		slug,
-		label: RESOURCE_PROVIDER_LABELS[slug]
-	})),
-	...RESOURCE_ROLES.map((slug) => ({
-		kind: 'role' as const,
-		slug,
-		label: RESOURCE_ROLE_LABELS[slug]
-	}))
-];
-
 const client = postgres(url, { max: 1 });
 const db = drizzle(client);
 
 try {
-	await db.insert(catalogEntries).values(rows).onConflictDoNothing();
-	console.log(`Catalog seed upserted (${rows.length} rows)`);
+	const catalogCount = await seedCatalog(db);
+	console.log(`Catalog seed upserted (${catalogCount} rows)`);
+
+	if (process.env.SEED_DEMO_DATA === 'true') {
+		const inserted = await seedDemoResources(db, getFileStorageRoot());
+		console.log(
+			inserted > 0
+				? `Demo resource seed inserted (${inserted} row)`
+				: 'Demo resource seed already present (skipped)'
+		);
+	}
 } finally {
 	await client.end();
 }
