@@ -1,4 +1,4 @@
-import { count } from 'drizzle-orm';
+import { count, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -24,30 +24,36 @@ describeDb('default migrate leaves resources empty (#45)', () => {
 		fileRoot = await mkdtemp(join(tmpdir(), 'pack-demo-seed-'));
 		process.env.FILE_STORAGE_ROOT = fileRoot;
 		await migrate(db, { migrationsFolder });
-		// Isolation from other integration tests sharing CI Postgres.
-		await db.delete(resources);
-		await db.delete(catalogEntries);
+		// Drop only the demo marker row — other suites may insert into the shared CI DB.
+		await db.delete(resources).where(eq(resources.storagePath, DEMO_SEED_STORAGE_PATH));
 	});
 
 	afterAll(async () => {
+		await db.delete(resources).where(eq(resources.storagePath, DEMO_SEED_STORAGE_PATH));
 		await client.end();
 		await rm(fileRoot, { recursive: true, force: true });
 	});
 
-	it('has zero resources after migrate + catalog seed (prod-safe default)', async () => {
+	it('does not create the demo storage key via migrate + catalog seed', async () => {
 		await migrate(db, { migrationsFolder });
 		await seedCatalog(db);
-		const [{ value: resourceTotal }] = await db.select({ value: count() }).from(resources);
+		const demoRows = await db
+			.select()
+			.from(resources)
+			.where(eq(resources.storagePath, DEMO_SEED_STORAGE_PATH));
 		const [{ value: catalogTotal }] = await db.select({ value: count() }).from(catalogEntries);
-		expect(Number(resourceTotal)).toBe(0);
+		expect(demoRows).toHaveLength(0);
 		expect(Number(catalogTotal)).toBeGreaterThan(0);
 	});
 
 	it('loads demo resource rows only via the opt-in demo seed', async () => {
 		const inserted = await seedDemoResources(db, fileRoot);
 		expect(inserted).toBe(1);
-		const [{ value: resourceTotal }] = await db.select({ value: count() }).from(resources);
-		expect(Number(resourceTotal)).toBe(1);
+		const demoRows = await db
+			.select()
+			.from(resources)
+			.where(eq(resources.storagePath, DEMO_SEED_STORAGE_PATH));
+		expect(demoRows).toHaveLength(1);
 
 		const again = await seedDemoResources(db, fileRoot);
 		expect(again).toBe(0);
