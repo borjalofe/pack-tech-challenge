@@ -58,13 +58,14 @@ SvelteKit (Node adapter)
 
 ## Decisions
 
-Recorded ADRs (accepted, dated 2026-11-08):
+Recorded ADRs (accepted):
 
-- [0001 — pnpm as package manager](docs/decisions/0001-pnpm-as-package-manager.md)
-- [0002 — Compose Postgres + env contract](docs/decisions/0002-compose-postgres-env-contract.md)
-- [0003 — Drizzle for resources migration + catalog seed](docs/decisions/0003-drizzle-resources-migration.md)
-- [0004 — Shared Zod upload schema + local filesystem store](docs/decisions/0004-shared-zod-local-fs-upload.md)
-- [0005 — Pack visual tokens + chrome shell](docs/decisions/0005-pack-visual-tokens.md)
+- [0001 — pnpm as package manager](docs/decisions/0001-pnpm-as-package-manager.md) (2026-11-08)
+- [0002 — Compose Postgres + env contract](docs/decisions/0002-compose-postgres-env-contract.md) (2026-11-08)
+- [0003 — Drizzle for resources migration + catalog seed](docs/decisions/0003-drizzle-resources-migration.md) (2026-11-08)
+- [0004 — Shared Zod upload schema + local filesystem store](docs/decisions/0004-shared-zod-local-fs-upload.md) (2026-11-08)
+- [0005 — Pack visual tokens + chrome shell](docs/decisions/0005-pack-visual-tokens.md) (2026-11-08)
+- [0006 — Fly.io as public deploy host (Pack AWS-shaped)](docs/decisions/0006-deploy-host-fly.md) (2026-11-09) — host choice only; app is **not** deployed yet
 
 Operational notes that grew from the same work (documented in code/env, not separate ADRs): bake `ORIGIN` into `kit.paths.origin` at build for HTTP multipart CSRF; keep dropdown catalog in client-safe `src/lib/catalog.ts` (server re-exports).
 
@@ -198,5 +199,5 @@ These are deferred nice-to-haves tracked as review/intent only ([epic #12](https
 | --- | --- | --- |
 | Wire search + tab filters | Field/tabs are presentational in M1; filter query params are not on the list API | [#24](https://github.com/borjalofe/pack-tech-challenge/issues/24) |
 | Cloud object storage | Local `FILE_STORAGE_ROOT` keeps the ≤3h path small; cloud would swap the store adapter | [#25](https://github.com/borjalofe/pack-tech-challenge/issues/25) |
-| Deploy target | Compose + `adapter-node` is enough to demo; production host/CDN choice is open | [#26](https://github.com/borjalofe/pack-tech-challenge/issues/26) |
+| Deploy on Fly.io | Host chosen ([ADR 0006](docs/decisions/0006-deploy-host-fly.md)); runtime/`fly.toml`/verify not shipped | [#26](https://github.com/borjalofe/pack-tech-challenge/issues/26) / [#44](https://github.com/borjalofe/pack-tech-challenge/issues/44) |
 | In-app file viewer | M1 opens/downloads via attachment; rich in-browser preview is separate | [#27](https://github.com/borjalofe/pack-tech-challenge/issues/27) |
