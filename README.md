@@ -21,12 +21,12 @@ Operators need a small internal surface to upload mentoring resources (PDF and o
 - Shared Zod create schema used by API and Upload Resource modal (thin File adapter only)
 - Pack chrome + tokens, upload modal (Images 1–2), table + success toast (Image 3), row download
 - CI: PR gate (check, lint, unit, db integration, Playwright e2e, audit@high) + daily audit workflow
+- Public deploy on Fly.io (`fly.toml`, release migrate, HTTPS URL below)
 
 ### Excludes (not built here)
 
 - Functional search / tab filters (Field and tabs are presentational)
-- Cloud object storage or signed URLs
-- Production deploy target beyond Compose/`adapter-node`
+- Cloud object storage or signed URLs (Epic #25) — Fly still uses a volume-backed local FS
 - In-app rich file viewer (download/open only)
 
 ## Architecture
@@ -65,7 +65,7 @@ Recorded ADRs (accepted):
 - [0003 — Drizzle for resources migration + catalog seed](docs/decisions/0003-drizzle-resources-migration.md) (2026-11-08)
 - [0004 — Shared Zod upload schema + local filesystem store](docs/decisions/0004-shared-zod-local-fs-upload.md) (2026-11-08)
 - [0005 — Pack visual tokens + chrome shell](docs/decisions/0005-pack-visual-tokens.md) (2026-11-08)
-- [0006 — Fly.io as public deploy host (Pack AWS-shaped)](docs/decisions/0006-deploy-host-fly.md) (2026-11-09) — host choice only; app is **not** deployed yet
+- [0006 — Fly.io as public deploy host (Pack AWS-shaped)](docs/decisions/0006-deploy-host-fly.md) (2026-11-09) — host choice; live app at the Deploy URL below
 
 Operational notes that grew from the same work (documented in code/env, not separate ADRs): bake `ORIGIN` into `kit.paths.origin` at build for HTTP multipart CSRF; keep dropdown catalog in client-safe `src/lib/catalog.ts` (server re-exports).
 
@@ -162,18 +162,31 @@ docker run --rm -p 3000:3000 \
 - `GET /healthz` → `{ status, db }` (`db` is `ok` | `error` | `skipped`; HTTP 503 when degraded).
 - Compose `docker compose up --build` remains the supported full local stack.
 
-### Fly wiring checklist (config only — no public URL yet)
+### Deploy (Fly.io)
 
-Repo ships `fly.toml` ([ADR 0006](docs/decisions/0006-deploy-host-fly.md)). This section is a **wiring checklist**; a verified public URL is issue [#48](https://github.com/borjalofe/pack-tech-challenge/issues/48), not claimed here.
+**Live URL:** [https://pack-tech-challenge.fly.dev](https://pack-tech-challenge.fly.dev)
 
-1. `fly apps create pack-tech-challenge` (or rename `app` in `fly.toml` to match).
-2. Postgres: `fly postgres create` then `fly postgres attach <pg-app> -a pack-tech-challenge` (sets `DATABASE_URL`), **or** `fly secrets set DATABASE_URL=…` for an external Postgres.
-3. Secrets (names in `.env.example`; values only via `fly secrets` — never git):
-   - **Required now:** `DATABASE_URL`, and bake matching `ORIGIN` at deploy (`fly deploy --build-arg ORIGIN=https://…`).
-   - **Optional volume:** `fly volumes create pack_files --region iad --size 1` (matches `[mounts]` for `FILE_STORAGE_ROOT` until Epic #25).
-   - **Do not set** `SEED_DEMO_DATA` — `[deploy].release_command` runs `/fly-release.sh` → `pnpm db:migrate` + `pnpm db:seed` (catalogs only).
-   - **Reserved (Epic #25, unimplemented):** `BLOB_DRIVER`, `S3_*`, `R2_*`.
-4. Healthcheck: `[[http_service.checks]]` → `GET /healthz` (same path as the image `HEALTHCHECK`).
+Host choice: [ADR 0006](docs/decisions/0006-deploy-host-fly.md). Blobs are still **local FS on a Fly volume** (`pack_files` → `/data/file-store`); Epic [#25](https://github.com/borjalofe/pack-tech-challenge/issues/25) (S3/R2) is not shipped — uploads survive machine replace only while that volume remains attached. Destroying the volume loses objects.
+
+| Piece | Production value |
+| --- | --- |
+| App | `pack-tech-challenge` (`fly.toml`, region `fra`) |
+| HTTPS | `https://pack-tech-challenge.fly.dev` |
+| Postgres | Fly Postgres app `pack-tech-db` attached as secret `DATABASE_URL` |
+| Origin / CSRF | `[build.args].ORIGIN` in `fly.toml` (must match the public URL) |
+| Migrate | `[deploy].release_command` → `/fly-release.sh` → `pnpm db:migrate` + `pnpm db:seed` (**catalogs only**; `SEED_DEMO_DATA` unset) |
+| Health | `GET /healthz` |
+| CD | [`.github/workflows/fly-deploy.yml`](.github/workflows/fly-deploy.yml) on `main` (secret `FLY_API_TOKEN`) |
+
+Manual redeploy:
+
+```sh
+fly deploy --remote-only
+# probe: curl -sS https://pack-tech-challenge.fly.dev/healthz
+# list:  curl -sS https://pack-tech-challenge.fly.dev/api/resources
+```
+
+Multipart uploads from scripts need `Origin: https://pack-tech-challenge.fly.dev` (browser sends this automatically). First visit after a clean migrate shows an **empty** resources table — no demo fixture rows.
 
 ### Playwright e2e locally
 
@@ -199,6 +212,7 @@ Specs: `e2e/upload-resource.spec.ts`, `e2e/resources-table.spec.ts`, `e2e/row-do
 | Path safety (no `../`) | `src/lib/server/storage/object-key.ts`, `open-resource.spec.ts` |
 | E2E happy path | `e2e/row-download.spec.ts` (upload → toast → row → download bytes) |
 | Empty resources after default migrate | `src/lib/server/db/seed-demo.integration.spec.ts` |
+| Public Fly deploy | [https://pack-tech-challenge.fly.dev](https://pack-tech-challenge.fly.dev), `fly.toml`, `.github/workflows/fly-deploy.yml` |
 
 ## Lessons learned (this repo)
 
@@ -209,6 +223,7 @@ Failures and fixes that showed up while building M1 here — not borrowed from o
 3. **Runtime image missing shared catalog.** After the catalog move, Compose seed failed until the Dockerfile copied `src/lib/catalog.ts` into the runtime image (follow-up fix PRs on `main`).
 4. **Playwright strict mode on duplicate titles.** Re-running Image 3 e2e against a dirty DB matched multiple rows. Fix: unique titles with `Date.now()` in the table e2e.
 5. **Download filename headers.** Attachment `Content-Disposition` needed ASCII-safe sanitization so odd filenames cannot break the header (`open-resource.ts` + gate follow-up formatting).
+6. **Fly release catalog seed pulled in LocalFileStore.** Top-level imports in `seed.ts` failed on the slim runtime image before demo env was even set. Fix: lazy-import demo/storage only when `SEED_DEMO_DATA=true`, and copy `src/lib/server/storage` into the image for Compose opt-in demo.
 
 ## Brand / product surface (what exists)
 
@@ -234,11 +249,10 @@ Container image scanning is **N/A** until a dedicated image-scanning job is adde
 
 ## Next steps (NTH intent — not shipped)
 
-These are deferred nice-to-haves tracked as review/intent only ([epic #12](https://github.com/borjalofe/pack-tech-challenge/issues/12)). **None of the following are implemented in this repo.**
+These are deferred nice-to-haves tracked as review/intent only ([epic #12](https://github.com/borjalofe/pack-tech-challenge/issues/12)). Remaining items below are **not** implemented.
 
 | Intent | Why it was deferred | Issue |
 | --- | --- | --- |
 | Wire search + tab filters | Field/tabs are presentational in M1; filter query params are not on the list API | [#24](https://github.com/borjalofe/pack-tech-challenge/issues/24) |
-| Cloud object storage | Local `FILE_STORAGE_ROOT` keeps the ≤3h path small; cloud would swap the store adapter | [#25](https://github.com/borjalofe/pack-tech-challenge/issues/25) |
-| Deploy on Fly.io | Host + runtime + `fly.toml`/secrets checklist shipped; **public URL verify** still open | [#26](https://github.com/borjalofe/pack-tech-challenge/issues/26) / [#48](https://github.com/borjalofe/pack-tech-challenge/issues/48) |
+| Cloud object storage | Local `FILE_STORAGE_ROOT` / Fly volume keeps the ≤3h path small; cloud would swap the store adapter | [#25](https://github.com/borjalofe/pack-tech-challenge/issues/25) |
 | In-app file viewer | M1 opens/downloads via attachment; rich in-browser preview is separate | [#27](https://github.com/borjalofe/pack-tech-challenge/issues/27) |
