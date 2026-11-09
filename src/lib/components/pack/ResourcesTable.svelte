@@ -30,6 +30,27 @@
 	function typeLabel(value: string) {
 		return RESOURCE_CATEGORY_LABELS[value as keyof typeof RESOURCE_CATEGORY_LABELS] ?? value;
 	}
+
+	function fileHref(id: string) {
+		return resolve('/api/resources/[id]/file', { id });
+	}
+
+	/** Row activation downloads/opens the stored file (Image 3 + #22/#54). */
+	function openResource(id: string) {
+		const anchor = document.createElement('a');
+		anchor.href = fileHref(id);
+		anchor.rel = 'noopener';
+		document.body.appendChild(anchor);
+		anchor.click();
+		anchor.remove();
+	}
+
+	function onRowKeydown(event: KeyboardEvent, id: string) {
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault();
+			openResource(id);
+		}
+	}
 </script>
 
 <div class="wrap" data-slot="resources-table">
@@ -63,15 +84,16 @@
 				</tr>
 			{:else}
 				{#each sorted as row (row.id)}
-					<tr data-slot="resources-table-row">
+					<tr
+						class="row"
+						data-slot="resources-table-row"
+						tabindex="0"
+						aria-label={`Download ${row.title}`}
+						onclick={() => openResource(row.id)}
+						onkeydown={(event) => onRowKeydown(event, row.id)}
+					>
 						<td>
-							<a
-								class="title-link"
-								data-slot="resources-table-open"
-								href={resolve('/api/resources/[id]/file', { id: row.id })}
-							>
-								{row.title}
-							</a>
+							<span class="title">{row.title}</span>
 						</td>
 						<td class="muted">{row.fileOriginalName}</td>
 						<td>{row.viewCount}</td>
@@ -87,15 +109,16 @@
 							>
 						</td>
 						<td class="actions">
-							<a
+							<button
+								type="button"
 								class="more"
 								data-slot="resources-table-row-actions"
-								href={resolve('/api/resources/[id]/file', { id: row.id })}
-								aria-label={`Download ${row.title}`}
-								title="Download"
+								aria-label={`Row actions for ${row.title}`}
+								title="Actions"
+								onclick={(event) => event.stopPropagation()}
 							>
 								⋮
-							</a>
+							</button>
 						</td>
 					</tr>
 				{/each}
@@ -130,6 +153,19 @@
 		white-space: nowrap;
 	}
 
+	.row {
+		cursor: pointer;
+	}
+
+	.row:hover {
+		background: color-mix(in srgb, var(--color-page) 80%, transparent);
+	}
+
+	.row:focus-visible {
+		outline: 2px solid var(--color-info);
+		outline-offset: -2px;
+	}
+
 	.muted {
 		color: var(--color-muted);
 	}
@@ -157,6 +193,10 @@
 		font-size: 0.75rem;
 	}
 
+	.title {
+		font-weight: 500;
+	}
+
 	.pill {
 		display: inline-flex;
 		align-items: center;
@@ -175,17 +215,6 @@
 		width: 2.5rem;
 	}
 
-	.title-link {
-		color: inherit;
-		text-decoration: none;
-		font-weight: 500;
-	}
-
-	.title-link:hover {
-		color: var(--color-primary);
-		text-decoration: underline;
-	}
-
 	.more {
 		appearance: none;
 		border: 0;
@@ -195,7 +224,6 @@
 		line-height: 1;
 		cursor: pointer;
 		padding: 0.25rem 0.5rem;
-		text-decoration: none;
 	}
 
 	.more:hover {
