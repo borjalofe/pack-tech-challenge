@@ -45,27 +45,34 @@
 		</div>
 	</div>
 
-	<label class="search" data-slot="search-field">
-		<span class="loupe" aria-hidden="true">
-			<svg
-				width="16"
-				height="16"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-			>
-				<circle cx="11" cy="11" r="7" />
-				<path d="m20 20-3.5-3.5" />
-			</svg>
-		</span>
-		<span class="sr-only">Search</span>
-		<input type="search" placeholder="Field" bind:value={query} disabled aria-disabled="true" />
-	</label>
+	<div class="actions">
+		<label class="search" data-slot="search-field">
+			<span class="loupe" aria-hidden="true">
+				<svg
+					width="16"
+					height="16"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+				>
+					<circle cx="11" cy="11" r="7" />
+					<path d="m20 20-3.5-3.5" />
+				</svg>
+			</span>
+			<span class="sr-only">Search</span>
+			<input type="search" placeholder="Field" bind:value={query} disabled aria-disabled="true" />
+		</label>
 
-	<button type="button" class="upload" data-slot="upload-button" onclick={() => onUploadClick?.()}>
-		Upload
-	</button>
+		<button
+			type="button"
+			class="upload"
+			data-slot="upload-button"
+			onclick={() => onUploadClick?.()}
+		>
+			Upload
+		</button>
+	</div>
 </div>
 
 <style>
@@ -111,6 +118,13 @@
 	.tab.active {
 		color: var(--color-foreground);
 		border-bottom-color: var(--color-info);
+	}
+
+	.actions {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-left: auto;
 	}
 
 	.search {
