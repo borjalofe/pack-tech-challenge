@@ -112,10 +112,11 @@ jobs:
       - name: Seed catalog
         run: pnpm db:seed
 
-      - name: Migrate + upload/list integration tests
+      - name: Migrate + seed/upload/list integration tests
         run: >
           pnpm test
           src/lib/server/db/migrate.integration.spec.ts
+          src/lib/server/db/seed-demo.integration.spec.ts
           src/lib/server/resources/create-resource.integration.spec.ts
           src/lib/server/resources/list-resources.integration.spec.ts
 
