@@ -1,14 +1,14 @@
-# Fly.io app wiring (#47 / ADR 0006). Does not claim a live public URL — see #48.
-# Create/attach Postgres and set secrets before the first real deploy.
+# Fly.io app wiring (#47 / ADR 0006). Live URL verified in #48:
+# https://pack-tech-challenge.fly.dev
 
 app = 'pack-tech-challenge'
 primary_region = 'fra'
 
 [build]
   dockerfile = 'Dockerfile'
-  # CSRF: bake the public https origin at image build time (must match the browser URL).
-  # Example: fly deploy --build-arg ORIGIN=https://pack-tech-challenge.fly.dev
-  # Do not invent a URL here until #48 verifies the app is live.
+  [build.args]
+    # CSRF: must match the public browser origin.
+    ORIGIN = 'https://pack-tech-challenge.fly.dev'
 
 [deploy]
   # Schema + form catalogs only. Never set SEED_DEMO_DATA on Fly.
