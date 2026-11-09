@@ -1,21 +1,76 @@
 # pack-tech-challenge
 
-SvelteKit + TypeScript app for the Pack resources take-home. Package manager: **pnpm**.
+SvelteKit + TypeScript take-home: Pack-style **Resources** upload, list, and download, with Compose Postgres, shared Zod validation, and a green PR gate (unit + db + Playwright + audit).
 
-## Stack
+## Problem
 
-| Piece | Choice |
+Operators need a small internal surface to upload mentoring resources (PDF and other allowlisted types), see them in a Pack-like table, and open the stored file again — without inventing a second validation contract or leaking filesystem paths to the browser.
+
+## Who
+
+- **Primary reader:** hiring / portfolio reviewer evaluating an M1 slice (≤3h must-path) against Pack visual refs.
+- **Secondary:** a developer cloning the repo to run Compose + pnpm and exercise the happy path.
+
+## Scope
+
+### Includes (shipped in this repo)
+
+- Bootstrap: SvelteKit 5, TypeScript, pnpm, Node adapter, Compose `db` + `app`
+- Persistence: Drizzle schema/migrations, catalog seed, local file store under `FILE_STORAGE_ROOT`
+- Write/read APIs: `POST` / `GET /api/resources`, download `GET /api/resources/:id/file`
+- Shared Zod create schema used by API and Upload Resource modal (thin File adapter only)
+- Pack chrome + tokens, upload modal (Images 1–2), table + success toast (Image 3), row download
+- CI: PR gate (check, lint, unit, db integration, Playwright e2e, audit@high) + daily audit workflow
+
+### Excludes (not built here)
+
+- Functional search / tab filters (Field and tabs are presentational)
+- Cloud object storage or signed URLs
+- Production deploy target beyond Compose/`adapter-node`
+- In-app rich file viewer (download/open only)
+
+## Architecture
+
+```text
+Browser (Pack chrome + modal + table)
+    │  multipart POST / JSON GET / file GET
+    ▼
+SvelteKit (Node adapter)
+    ├── validation: shared Zod (#lib/validation/resource-upload)
+    ├── resources: create / list / open-by-id
+    └── storage: LocalFileStore → FILE_STORAGE_ROOT (keys via UUID, not client paths)
+            │
+            ▼
+        Postgres 16 (Compose service `db`)
+```
+
+| Piece | Choice in this repo |
 | --- | --- |
 | App | SvelteKit (Svelte 5) + TypeScript |
 | Bundler | Vite |
 | Package manager | pnpm (`packageManager` + lockfile) |
-| Database | Postgres 16 via Compose service `db` + Drizzle migrations |
-| Upload validation | Shared Zod (`src/lib/validation/resource-upload.ts`) + client File adapter |
+| Database | Postgres 16 via Compose `db` + Drizzle |
+| Upload validation | Shared Zod + client File adapter |
 | File blobs | Local filesystem (`FILE_STORAGE_ROOT`) |
-| UI tokens | Pack CSS vars (`src/lib/styles/tokens.css`) — primary `#FC8034` |
-| Upload UI | Pack modal (`UploadResourceDialog`) → `POST /api/resources` |
+| UI | Pack CSS tokens + `src/lib/components/pack/` |
 
-## How to run (Compose app + db)
+**Brand refs:** [`docs/brand/TOKENS.md`](docs/brand/TOKENS.md), screenshots in [`docs/brand/source/`](docs/brand/source/) (01–03 upload wizard / table).
+
+## Decisions
+
+Recorded ADRs (accepted, dated 2026-11-08):
+
+- [0001 — pnpm as package manager](docs/decisions/0001-pnpm-as-package-manager.md)
+- [0002 — Compose Postgres + env contract](docs/decisions/0002-compose-postgres-env-contract.md)
+- [0003 — Drizzle for resources migration + catalog seed](docs/decisions/0003-drizzle-resources-migration.md)
+- [0004 — Shared Zod upload schema + local filesystem store](docs/decisions/0004-shared-zod-local-fs-upload.md)
+- [0005 — Pack visual tokens + chrome shell](docs/decisions/0005-pack-visual-tokens.md)
+
+Operational notes that grew from the same work (documented in code/env, not separate ADRs): bake `ORIGIN` into `kit.paths.origin` at build for HTTP multipart CSRF; keep dropdown catalog in client-safe `src/lib/catalog.ts` (server re-exports).
+
+## How to run
+
+### Compose app + db
 
 **Prerequisite:** Docker.
 
@@ -28,10 +83,8 @@ Set `ORIGIN` in `.env` before `pnpm build` / Compose image build so it matches t
 
 - App: [http://localhost:3000](http://localhost:3000) (`APP_PORT`)
 - Postgres: `localhost:${POSTGRES_PORT:-5432}`
-- Upload UI: Resources → **Upload** (modal uses shared Zod, then `POST /api/resources`)
-- Upload API: `POST /api/resources` (multipart)
-- List: `GET /api/resources` (public fields for the table; no `storagePath`)
-- Download/open: `GET /api/resources/:id/file` (id lookup only; attachment + stored Content-Type)
+- Upload UI: Resources → **Upload**
+- APIs: `POST` / `GET /api/resources`; download `GET /api/resources/:id/file`
 
 Example upload:
 
@@ -52,11 +105,9 @@ Example list:
 curl -sS "http://localhost:3000/api/resources"
 ```
 
-Response shape: `{ items, total }`. Each item includes table-oriented fields such as `title`, `fileOriginalName` (path/filename column), `viewCount`, `uploadedBy`, `provider`, and `category` (type), plus other public metadata. Search/filter query params are not wired yet.
+Response shape: `{ items, total }`. Public fields only (no `storagePath`). Search/filter query params are not wired.
 
-Shared Zod import path for later UI: `src/lib/validation/resource-upload.ts` (or `#lib/validation/resource-upload.js`).
-
-## How to run (host pnpm + Compose db)
+### Host pnpm + Compose db
 
 **Prerequisite:** Node.js ≥ 22, pnpm, Docker.
 
@@ -69,56 +120,69 @@ pnpm db:seed
 pnpm run dev
 ```
 
-App (Vite): [http://localhost:5173](http://localhost:5173) — same `POST` / `GET /api/resources` against the host-running SvelteKit process.
-
-Other commands that work today:
+App (Vite): [http://localhost:5173](http://localhost:5173).
 
 ```sh
 pnpm run check   # svelte-check / TypeScript
 pnpm lint        # prettier + eslint
 pnpm test        # vitest unit (+ DB integration when DATABASE_URL is set)
-pnpm test:e2e    # Playwright: upload modal, table/toast, row download (build with matching ORIGIN first)
+pnpm test:e2e    # Playwright (build with matching ORIGIN first)
 pnpm run audit   # SCA, fail on high+
 pnpm run build   # production build (Node adapter; reads ORIGIN for CSRF)
 pnpm start       # node build
-pnpm run preview # vite preview
 ```
 
 Local reset: `docker compose down -v` then bring the stack up again.
 
-## Brand / chrome + upload form + table
-
-Pack visual tokens, Resources page chrome (header, card, tabs, Field, Upload, FAB), the **Upload Resource** modal (Images 1–2), the **table body + success toast** (Image 3), and **row download/open**.
-
-- Tokens: [`src/lib/styles/tokens.css`](src/lib/styles/tokens.css) / [`src/lib/styles/tokens.ts`](src/lib/styles/tokens.ts)
-- Notes + screenshots: [`docs/brand/`](docs/brand/)
-- Shell / modal / table / toast: `src/lib/components/pack/`
-- Shared Zod: `src/lib/validation/resource-upload.ts` (client adapter: `resource-upload-client.ts`)
-- Dropdown catalog (client-safe): `src/lib/catalog.ts`
-- Table binds to `GET /api/resources` (SSR load + refresh after upload)
-- Toast copy after successful upload: `Resource Uploaded Successfully!` (success token `#1C9C70`)
-- Title / ⋮ open `GET /api/resources/:id/file` (no client path; missing → 404)
-
-## PR gate
-
-PRs to `main` run `.github/workflows/pr-gate.yml` (gate v0): typecheck + lint, unit tests, db migrate/seed + upload integration, Playwright e2e (upload → list → open), and `pnpm run audit` at high severity.
+### Playwright e2e locally
 
 ```sh
-# Local e2e (Compose db up; ORIGIN must match Playwright baseURL at build time)
-cp .env.example .env   # if needed
 docker compose up -d db
 pnpm db:migrate && pnpm db:seed
 ORIGIN=http://localhost:4173 pnpm run build
 E2E_PORT=4173 E2E_BASE_URL=http://localhost:4173 pnpm test:e2e
 ```
 
-Specs live under `e2e/` (`upload-resource`, `resources-table`, `row-download`).
+Specs: `e2e/upload-resource.spec.ts`, `e2e/resources-table.spec.ts`, `e2e/row-download.spec.ts`.
+
+## Evidence
+
+| Claim | Where it lives |
+| --- | --- |
+| PR acceptance gate | [`.github/workflows/pr-gate.yml`](.github/workflows/pr-gate.yml) |
+| Daily vulnerability scan | [`.github/workflows/daily-audit.yml`](.github/workflows/daily-audit.yml) |
+| Shared Zod + upload API | `src/lib/validation/resource-upload.ts`, `src/routes/api/resources/+server.ts` |
+| List + download | `src/lib/server/resources/list-resources.ts`, `src/routes/api/resources/[id]/file/+server.ts` |
+| Pack UI | `src/lib/components/pack/`, `src/lib/styles/tokens.css` |
+| Brand screenshots / token notes | [`docs/brand/`](docs/brand/) |
+| Path safety (no `../`) | `src/lib/server/storage/object-key.ts`, `open-resource.spec.ts` |
+| E2E happy path | `e2e/row-download.spec.ts` (upload → toast → row → download bytes) |
+
+## Lessons learned (this repo)
+
+Failures and fixes that showed up while building M1 here — not borrowed from other projects:
+
+1. **`$lib/server` catalog broke the client build.** Importing dropdown constants from `#lib/server/db/catalog` into the Upload dialog tripped SvelteKit `server_only_import` after Vite’s client build. Fix: move the catalog to client-safe [`src/lib/catalog.ts`](src/lib/catalog.ts) and re-export from the server path for existing modules.
+2. **Multipart CSRF vs HTTP.** `adapter-node` derives `https` when `paths.origin` is unset, so browser `Origin: http://…` failed with “Cross-site POST form submissions are forbidden.” Fix: bake `ORIGIN` into `kit.paths.origin` at build (see `vite.config.ts`, Compose build arg, `.env.example`).
+3. **Runtime image missing shared catalog.** After the catalog move, Compose seed failed until the Dockerfile copied `src/lib/catalog.ts` into the runtime image (follow-up fix PRs on `main`).
+4. **Playwright strict mode on duplicate titles.** Re-running Image 3 e2e against a dirty DB matched multiple rows. Fix: unique titles with `Date.now()` in the table e2e.
+5. **Download filename headers.** Attachment `Content-Disposition` needed ASCII-safe sanitization so odd filenames cannot break the header (`open-resource.ts` + gate follow-up formatting).
+
+## Brand / product surface (what exists)
+
+Pack visual tokens, Resources chrome (header, card, tabs, Field, Upload, FAB), Upload Resource modal, table + toast, row download/open.
+
+- Tokens: [`src/lib/styles/tokens.css`](src/lib/styles/tokens.css) / [`src/lib/styles/tokens.ts`](src/lib/styles/tokens.ts)
+- Notes + screenshots: [`docs/brand/`](docs/brand/)
+- Toast copy: `Resource Uploaded Successfully!` (success `#1C9C70`)
+
+## PR gate
+
+PRs to `main` run `.github/workflows/pr-gate.yml`: typecheck + lint, unit tests, db migrate/seed + upload/list integration, Playwright e2e (upload → list → open), and `pnpm run audit` at high severity.
 
 ## Daily vulnerability scan
 
 Independent of the PR gate: `.github/workflows/daily-audit.yml` runs `pnpm run audit` (high threshold) on a daily schedule and on demand.
-
-Manual run (Actions UI or CLI):
 
 ```sh
 gh workflow run "Daily audit" --ref main
@@ -126,10 +190,13 @@ gh workflow run "Daily audit" --ref main
 
 Container image scanning is **N/A** until a dedicated image-scanning job is added (Compose already builds an `app` image for runtime).
 
-## Decisions
+## Next steps (NTH intent — not shipped)
 
-- [0001 — pnpm as package manager](docs/decisions/0001-pnpm-as-package-manager.md)
-- [0002 — Compose Postgres + env contract](docs/decisions/0002-compose-postgres-env-contract.md)
-- [0003 — Drizzle for resources migration + catalog seed](docs/decisions/0003-drizzle-resources-migration.md)
-- [0004 — Shared Zod upload schema + local filesystem store](docs/decisions/0004-shared-zod-local-fs-upload.md)
-- [0005 — Pack visual tokens + chrome shell](docs/decisions/0005-pack-visual-tokens.md)
+These are deferred nice-to-haves tracked as review/intent only ([epic #12](https://github.com/borjalofe/pack-tech-challenge/issues/12)). **None of the following are implemented in this repo.**
+
+| Intent | Why it was deferred | Issue |
+| --- | --- | --- |
+| Wire search + tab filters | Field/tabs are presentational in M1; filter query params are not on the list API | [#24](https://github.com/borjalofe/pack-tech-challenge/issues/24) |
+| Cloud object storage | Local `FILE_STORAGE_ROOT` keeps the ≤3h path small; cloud would swap the store adapter | [#25](https://github.com/borjalofe/pack-tech-challenge/issues/25) |
+| Deploy target | Compose + `adapter-node` is enough to demo; production host/CDN choice is open | [#26](https://github.com/borjalofe/pack-tech-challenge/issues/26) |
+| In-app file viewer | M1 opens/downloads via attachment; rich in-browser preview is separate | [#27](https://github.com/borjalofe/pack-tech-challenge/issues/27) |
